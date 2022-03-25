@@ -8,6 +8,9 @@ gcc main.c Basic.c Exception/Exception.c Strings/String.c -o Maker
 ```
 And add the file Maker to your environment paths.
 
+## Usage
+You can print all the commands with their use by `Maker -h`.
+
 ## Sets
 Sets are just collection of files. You can create sets for any files and include them in any project by just adding the set.
 
