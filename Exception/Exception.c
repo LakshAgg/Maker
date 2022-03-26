@@ -6,6 +6,7 @@
 
 jmp_buf *___jmp_stack;
 unsigned long ___jmp_stack_height;
+Exception *exception_handler;
 
 Exception ___exception;
 void ___pop();

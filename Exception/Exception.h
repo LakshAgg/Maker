@@ -9,7 +9,7 @@ typedef struct
     int internal_code;
 } Exception;
 
-Exception *exception_handler;
+extern Exception *exception_handler;
 
 void ____start_try();
 void ____end_try();
