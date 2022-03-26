@@ -1,7 +1,6 @@
 #ifndef __BASIC__Header
 #define __BASIC__Header
 #include <stdbool.h>
-// its a part of CPlugins repo
 
 typedef struct __s_node_free
 {

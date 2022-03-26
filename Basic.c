@@ -1,7 +1,6 @@
 #include <stdio.h>
 #include "Basic.h"
 #include <stdlib.h>
-// its a part of CPlugins repo
 
 typedef struct
 {

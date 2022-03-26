@@ -1,7 +1,7 @@
 #include <limits.h>
-#include "../CPlugins/Strings/String.h"
-#include "../CPlugins/Exception/Exception.h"
-#include "../CPlugins/CLI/CLI.h"
+#include "Strings/String.h"
+#include "Exception/Exception.h"
+#include "CLI/CLI.h"
 #include <unistd.h>
 #include <stdlib.h>
 #include <string.h>
@@ -117,6 +117,7 @@ int main(int argc, char *argv[])
                 free(compiler);
                 printf(BOLDWHITE "Executing: %s\n" RESET, str_value(command));
                 system(str_value(command));
+                printf(BOLDWHITE "DONE\n" RESET);
             }
         }
         else if (argc == 2)

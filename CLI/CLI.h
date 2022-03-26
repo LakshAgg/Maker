@@ -17,25 +17,4 @@
 #define Reset "0"
 #define Invert "7;"
 #define _E "m"
-
-// typedef struct
-// {
-//     char start;
-//     char end;
-//     char fill;
-//     char *color;
-//     char empty;
-//     unsigned long progress, max;
-// } Bar;
-
-
-// // creates a progress bar
-// Bar *create_bar();
-
-// void update_bar(Bar *bar);
-
-bool ask_bool(char *ques);
-
-// case insensitive
-bool matches_ans(char *ques, char *expected);
 #endif
