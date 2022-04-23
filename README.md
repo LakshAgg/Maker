@@ -32,6 +32,7 @@ A config can be set or created by: `Maker set_config [config name]`. Last set co
 For every config you need to specify compiler by: `Maker set_compiler [compiler]`. You can print the set compiler by `Maker print_compiler`.
 
 `Maker` simply compiles the last set config.
+`Maker [config_name]` simply compiles the config.
 
 In every config source files can be added by: `Maker add_file [file]`. This will add file to the last set config.
 

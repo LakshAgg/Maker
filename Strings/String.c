@@ -662,3 +662,8 @@ void destroy_string(string *s)
     __free_ptr(s->v_ctr);
     __free_ptr(s->ctr);
 }
+bool str_equals(string *a, string *b)
+{
+    if (a->length != b->length) return false;
+    return strcmp(a->value, b->value) == 0;
+}

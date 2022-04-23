@@ -158,4 +158,6 @@ char *str_value(string *s);
 unsigned long str_len(string *s);
 
 void destroy_string(string *s);
+
+bool str_equals(string *a, string *b);
 #endif

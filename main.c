@@ -14,6 +14,8 @@
 #define BOLDRED S_ Bold Red _E
 #define RESET S_ Reset _E
 
+#define VERSION 1.3
+
 typedef struct 
 {
     char type; // 1 -> file 2 -> argument 3 -> compiler 4 -> set 
@@ -23,7 +25,7 @@ typedef struct
 char **arguments_provided = NULL;
 void usage_error()
 {
-    printf(BOLDRED "Invalid usage." BOLDWHITE " Use %s -h for help.\n" RESET, arguments_provided[0]);
+    fprintf(stderr, BOLDRED "Invalid usage." BOLDWHITE " Use %s -h for help.\n" RESET, arguments_provided[0]);
     throw (3, "");
 }
 void bar(int len);
@@ -35,6 +37,8 @@ void get_files(string *s, char *set, FILE *f);
 char get_operation(char *rv, string **config);
 
 string *get_config(string **file_name);
+
+void make(FILE *f);
 
 u_long to_u_long(char *s);
 bool get_type(char *rv)
@@ -68,70 +72,30 @@ int main(int argc, char *argv[])
     {
         if (argc == 1)
         {
-            string *command = arr_to_str(" ");
             string *config;
-            char *compiler = NULL;
-            destroy_string(get_config(&config));
+            string *c_name = get_config(&config);
             FILE *f = fopen(str_value(config), "r");
             destroy_string(config);
             if (f == NULL)
             {
                 throw(4, "");
             }
-            while (true)
-            {
-                char type;
-                if (!fread(&type, 1, 1, f)) break;
-                u_long len;
-                fread(&len, sizeof(u_long), 1, f);
-                char *temp = malloc(len + 2);
-                fread(temp, 1, len, f);
-                if (type == 1 || type == 2)
-                {
-                    temp[len] = ' ';
-                    temp[len + 1] = 0;
-                    assign_concat_str_arr(command, temp);
-                }
-                else if (type == 4)
-                {
-                    temp[len] = 0;
-                    get_files(command, temp, f);
-                }
-                else if (type == 3)
-                {
-                    compiler = temp;
-                    compiler[len] = 0;
-                    temp = NULL;
-                }
-                free(temp);
-            }
-            fclose(f);
-            if (compiler == NULL)
-            {
-                printf(BOLDWHITE "Kindly set a compiler by calling: %s set_compiler [compiler]\n" RESET, arguments_provided[0]);
-                throw(3, "");
-            }
-            else
-            {
-                assign_insert_arr(command, 0, compiler);
-                free(compiler);
-                printf(BOLDWHITE "Executing: %s\n" RESET, str_value(command));
-                system(str_value(command));
-                printf(BOLDWHITE "DONE\n" RESET);
-            }
+            printf(BOLDWHITE "Maker (v%.1f)\nBuilding config: "S_ Bold Green _E"%s\n" RESET, VERSION, str_value(c_name));
+            destroy_string(c_name);
+            make(f);
         }
         else if (argc == 2)
         {
             char type_required = 0;
             if (strcmp(arguments_provided[1], "-h") == 0 || strcmp(arguments_provided[1], "--help") == 0)
             {
-                printf("\n\n");
-
+                printf(BOLDWHITE "Maker (v%.1f) (Compiled on %s %s)\n\n" RESET, VERSION, __DATE__, __TIME__);
                 printf(BOLDWHITE "Its required to set a configuration before adding any files, arguments or sets.\n" RESET);
                 printf("%s %-30s" BOLDWHITE ": Sets the configuration or creates one.\n" RESET, arguments_provided[0], "set_config [config name]");
                 printf("%s %-30s" BOLDWHITE ": Prints the current configuration.\n\n" RESET, arguments_provided[0], "print_config");
 
-                printf(BOLDWHITE "%s %-30s : Compiles the current configuration.\n\n" RESET, arguments_provided[0], "");
+                printf(BOLDWHITE "%s %-30s : Compiles the current configuration.\n" RESET, arguments_provided[0], "");
+                printf(BOLDWHITE "%s %-30s : Compiles the config.\n\n" RESET, arguments_provided[0], "[config]");
 
                 printf(BOLDWHITE "Its required to set a compiler.\n" RESET);
                 printf("%s %-30s" BOLDWHITE " : Sets the compiler of the current configuration.\n" RESET, arguments_provided[0], "set_compiler [compiler]");
@@ -252,7 +216,17 @@ int main(int argc, char *argv[])
                 }
                 fclose(f);
             }
-            else usage_error();
+            else
+            {
+                string *config_file_name = concat_arr_arr(".make_config/.config_", argv[1]);
+                if (config_file_name == NULL)
+                    throw(2, "Memory error");
+                FILE *f = fopen(str_value(config_file_name), "r");
+                if (f == NULL)
+                    throw(2, "Configuration does not exist. Set the config by set_config. Type -h for help");
+                printf(BOLDWHITE "Maker (v%.1f)\nBuilding config: "S_ Bold Green _E"%s\n" RESET, VERSION, arguments_provided[1]);
+                make(f);
+            }
         }
         else if (argc == 3)
         {
@@ -348,7 +322,7 @@ int main(int argc, char *argv[])
                 }
                 if (!removed)
                 {
-                    printf(BOLDRED "Set not found\n" RESET);
+                    fprintf(stderr, BOLDRED "Set not found\n" RESET);
                 }
                 fclose(temp);
                 fclose(f);
@@ -364,7 +338,7 @@ int main(int argc, char *argv[])
                 FILE *f = fopen(str_value(f_name), "r");
                 if (f == NULL)
                 {
-                    printf(BOLDRED "No sets created\n" RESET);
+                    fprintf(stderr, BOLDRED "No sets created\n" RESET);
                     throw(3, "");
                 }
                 bool found = false;
@@ -404,7 +378,7 @@ int main(int argc, char *argv[])
                 }
                 if (!found)
                 {
-                    printf(BOLDRED "Set not found\n" RESET);
+                    fprintf(stderr, BOLDRED "Set not found\n" RESET);
                 }
                 fclose(f);
             }
@@ -492,7 +466,7 @@ int main(int argc, char *argv[])
                     }
                     if (!removed && operation == 2)
                     {
-                        printf(BOLDRED "No %s with the given id was found\n" RESET, type == 1 ? "File" : (type == 2 ? "Argument" : (type == 4 ? "Set" : "Compiler")));
+                        fprintf(stderr, BOLDRED "No %s with the given id was found\n" RESET, type == 1 ? "File" : (type == 2 ? "Argument" : (type == 4 ? "Set" : "Compiler")));
                     }
                     fclose(temp);
                     fclose(f);
@@ -609,7 +583,7 @@ int main(int argc, char *argv[])
                 FILE *f = fopen(str_value(f_name), "r");
                 if (f == NULL)
                 {
-                    printf(BOLDRED "No sets created\n" RESET);
+                    fprintf(stderr, BOLDRED "No sets created\n" RESET);
                     throw(3, "");
                 }
                 
@@ -679,7 +653,7 @@ int main(int argc, char *argv[])
                 }
                 if (!removed)
                 {
-                    printf(BOLDRED "File not found\n" RESET);
+                    fprintf(stderr, BOLDRED "File not found\n" RESET);
                 }
                 fclose(temp);
                 fclose(f);
@@ -694,11 +668,11 @@ int main(int argc, char *argv[])
         }
     }
     catch(2)
-        printf(BOLDWHITE "An error has occurred -> " BOLDRED "%s\n" RESET, exception_handler->message);
+        fprintf(stderr, BOLDWHITE "An error has occurred -> " BOLDRED "%s\n" RESET, exception_handler->message);
     catch(3)
     {}
     catchall
-        printf(BOLDRED "An error has occurred. Try again later.\n" RESET);
+        fprintf(stderr, BOLDRED "An error has occurred. Try again later.\n" RESET);
     endtry
 }
 string *get_config(string **file_name)
@@ -706,7 +680,7 @@ string *get_config(string **file_name)
     FILE *f = fopen("./.make_config/.make_config", "r");
     if (f == NULL)
     {
-        printf(BOLDWHITE "Kindly set a configuration by executing %s set_config [config name]\n" RESET, arguments_provided[0]);
+        fprintf(stderr, BOLDWHITE "Kindly set a configuration by executing %s set_config [config name]\n" RESET, arguments_provided[0]);
         throw(3, "");
     }
     u_long length = 0;
@@ -729,7 +703,7 @@ string *get_config(string **file_name)
     f = fopen(str_value(temp), "r");
     if (f == NULL)
     {
-        printf(BOLDWHITE "Configuration file missing, Kindly reset the config file by executing %s set_config %s\n" RESET, arguments_provided[0], str_value(rv));
+        fprintf(stderr, BOLDWHITE "Configuration file missing, Kindly reset the config file by executing %s set_config %s\n" RESET, arguments_provided[0], str_value(rv));
         throw(3, "");
     }
     *file_name = temp;
@@ -806,7 +780,7 @@ void get_files(string *s, char *set, FILE *file)
     FILE *f = fopen(str_value(f_name), "r");
     if (f == NULL)
     {
-        printf(BOLDRED "No sets created. Set %s not found.\n" RESET, set);
+        fprintf(stderr, BOLDRED "No sets created. Set %s not found.\n" RESET, set);
         free(set);
         fclose(file);
         throw(3, "");
@@ -850,7 +824,7 @@ void get_files(string *s, char *set, FILE *file)
     }
     if (!found)
     {
-        printf(BOLDRED "Set not found\n" RESET);
+        fprintf(stderr, BOLDRED "Set not found\n" RESET);
         free(set);
         fclose(file);
         throw(3, "");
@@ -866,4 +840,50 @@ void bar(int len)
     }
     printf("\n");
     printf(RESET);
+}
+void make(FILE *f)
+{
+    char *compiler = NULL;
+    string *command = arr_to_str(" ");
+    while (true)
+    {
+        char type;
+        if (!fread(&type, 1, 1, f)) break;
+        u_long len;
+        fread(&len, sizeof(u_long), 1, f);
+        char *temp = malloc(len + 2);
+        fread(temp, 1, len, f);
+        if (type == 1 || type == 2)
+        {
+            temp[len] = ' ';
+            temp[len + 1] = 0;
+            assign_concat_str_arr(command, temp);
+        }
+        else if (type == 4)
+        {
+            temp[len] = 0;
+            get_files(command, temp, f);
+        }
+        else if (type == 3)
+        {
+            compiler = temp;
+            compiler[len] = 0;
+            temp = NULL;
+        }
+        free(temp);
+    }
+    fclose(f);
+    if (compiler == NULL)
+    {
+        fprintf(stderr, BOLDRED "Kindly set a compiler by calling: %s set_compiler [compiler]. Use -h for help.\n" RESET, arguments_provided[0]);
+        throw(3, "");
+    }
+    else
+    {
+        assign_insert_arr(command, 0, compiler);
+        free(compiler);
+        printf(BOLDWHITE "Executing:"S_ Bold Green _E" %s\n" RESET, str_value(command));
+        system(str_value(command));
+        printf(S_ Bold Green _E "DONE\n" RESET);
+    }
 }
