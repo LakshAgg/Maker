@@ -12,6 +12,7 @@
 
 #define BOLDWHITE S_ Bold White _E
 #define BOLDRED S_ Bold Red _E
+#define BOLDGREEN S_ Bold Green _E
 #define RESET S_ Reset _E
 
 #define VERSION 1.3
@@ -23,11 +24,10 @@ typedef struct
 } property;
 
 char **arguments_provided = NULL;
-void usage_error()
-{
-    fprintf(stderr, BOLDRED "Invalid usage." BOLDWHITE " Use %s -h for help.\n" RESET, arguments_provided[0]);
-    throw (3, "");
-}
+int arguments_provided_count = 0;
+
+void default_usage();
+
 void bar(int len);
 
 void get_files(string *s, char *set, FILE *f);
@@ -41,32 +41,12 @@ string *get_config(string **file_name);
 void make(FILE *f);
 
 u_long to_u_long(char *s);
-bool get_type(char *rv)
-{
-    if (strcmp(arguments_provided[1], "print_files") == 0)
-    {
-        *rv = 1;
-        return true;
-    }
-    else if (strcmp(arguments_provided[1], "print_arguments") == 0)
-    {
-        *rv = 2;
-        return true;
-    }
-    else if (strcmp(arguments_provided[1], "print_compiler") == 0)
-    {
-        *rv = 3;
-        return true;
-    }
-    else if (strcmp(arguments_provided[1], "print_sets_added") == 0)
-    {
-        *rv = 4;
-        return true;
-    }
-    return false;
-}
+
+bool get_type(char *rv);
+
 int main(int argc, char *argv[])
 {
+    arguments_provided_count = argc;
     arguments_provided = &(argv[0]);
     try // error code 3 -> print nothing, 2 -> specific message, {2, 3}` -> default error message
     {
@@ -80,7 +60,7 @@ int main(int argc, char *argv[])
             {
                 throw(4, "");
             }
-            printf(BOLDWHITE "Maker (v%.1f)\nBuilding config: "S_ Bold Green _E"%s\n" RESET, VERSION, str_value(c_name));
+            printf(BOLDWHITE "Maker (v%.1f)\nBuilding config: "BOLDGREEN"%s\n" RESET, VERSION, str_value(c_name));
             destroy_string(c_name);
             make(f);
         }
@@ -95,10 +75,10 @@ int main(int argc, char *argv[])
                 printf("%s %-30s" BOLDWHITE ": Prints the current configuration.\n\n" RESET, arguments_provided[0], "print_config");
 
                 printf(BOLDWHITE "%s %-30s : Compiles the current configuration.\n" RESET, arguments_provided[0], "");
-                printf(BOLDWHITE "%s %-30s : Compiles the config.\n\n" RESET, arguments_provided[0], "[config]");
+                printf(BOLDWHITE "%s %-30s : Compiles the configs.\n\n" RESET, arguments_provided[0], "[config] [config] ...");
 
-                printf(BOLDWHITE "Its required to set a compiler.\n" RESET);
-                printf("%s %-30s" BOLDWHITE " : Sets the compiler of the current configuration.\n" RESET, arguments_provided[0], "set_compiler [compiler]");
+                printf(BOLDWHITE "Its required to set a compiler / a program to run.\n" RESET);
+                printf("%s %-30s" BOLDWHITE " : Sets the compiler (or any program to run) of the current configuration.\n" RESET, arguments_provided[0], "set_compiler [compiler]");
                 printf("%s %-30s" BOLDWHITE " : Prints the compiler set to the current configuration.\n\n" RESET, arguments_provided[0], "print_compiler");
 
                 printf("%s %-30s" BOLDWHITE " : Adds the file to current configuration.\n" RESET, arguments_provided[0], "add_file [file]");
@@ -216,17 +196,7 @@ int main(int argc, char *argv[])
                 }
                 fclose(f);
             }
-            else
-            {
-                string *config_file_name = concat_arr_arr(".make_config/.config_", argv[1]);
-                if (config_file_name == NULL)
-                    throw(2, "Memory error");
-                FILE *f = fopen(str_value(config_file_name), "r");
-                if (f == NULL)
-                    throw(2, "Configuration does not exist. Set the config by set_config. Type -h for help");
-                printf(BOLDWHITE "Maker (v%.1f)\nBuilding config: "S_ Bold Green _E"%s\n" RESET, VERSION, arguments_provided[1]);
-                make(f);
-            }
+            else default_usage();
         }
         else if (argc == 3)
         {
@@ -660,11 +630,11 @@ int main(int argc, char *argv[])
                 remove(str_value(f_name));
                 rename(str_value(temp_file_name), str_value(f_name));
             }
-            else usage_error();
+            else default_usage();
         }
         else
         {
-            usage_error();
+            default_usage();
         }
     }
     catch(2)
@@ -680,7 +650,7 @@ string *get_config(string **file_name)
     FILE *f = fopen("./.make_config/.make_config", "r");
     if (f == NULL)
     {
-        fprintf(stderr, BOLDWHITE "Kindly set a configuration by executing %s set_config [config name]\n" RESET, arguments_provided[0]);
+        fprintf(stderr, BOLDWHITE "Kindly set a configuration by executing %s set_config [config name]. Aborting\n" RESET, arguments_provided[0]);
         throw(3, "");
     }
     u_long length = 0;
@@ -755,7 +725,7 @@ char get_operation(char *rv, string **config)
         return 2;
     }
     else
-        usage_error();
+        default_usage();
     return 0;
 }
 u_long to_u_long(char *s)
@@ -875,15 +845,59 @@ void make(FILE *f)
     fclose(f);
     if (compiler == NULL)
     {
-        fprintf(stderr, BOLDRED "Kindly set a compiler by calling: %s set_compiler [compiler]. Use -h for help.\n" RESET, arguments_provided[0]);
+        fprintf(stderr, BOLDRED "Kindly set a compiler by calling: %s set_compiler [compiler]. Aborting. Use -h for help.\n" RESET, arguments_provided[0]);
         throw(3, "");
     }
     else
     {
         assign_insert_arr(command, 0, compiler);
         free(compiler);
-        printf(BOLDWHITE "Executing:"S_ Bold Green _E" %s\n" RESET, str_value(command));
+        printf(BOLDWHITE "Executing:" BOLDGREEN " %s" RESET "\n", str_value(command));
         system(str_value(command));
-        printf(S_ Bold Green _E "DONE\n" RESET);
+        printf(BOLDGREEN "DONE\n" RESET);
     }
+}
+void default_usage()
+{
+    printf(BOLDWHITE "Maker (v%.1f)\n" RESET, VERSION);
+    for (int i = 1; i < arguments_provided_count; i++)
+    {
+        string *config_file_name = concat_arr_arr(".make_config/.config_", arguments_provided[i]);
+        if (config_file_name == NULL)
+            throw(2, "Memory error");
+        FILE *f = fopen(str_value(config_file_name), "r");
+        destroy_string(config_file_name);
+        if (f == NULL)
+        {
+            printf(BOLDRED "\nConfiguration: %s does not exist. Set the config by set_config. Aborting. Try %s -h for help.\n" RESET, arguments_provided[i], arguments_provided[0]);
+            throw(3, "");
+        }
+        printf(BOLDWHITE "\nBuilding config: "BOLDGREEN"%s\n" RESET, arguments_provided[i]);
+        make(f);
+    }
+    throw(3, "");
+}
+bool get_type(char *rv)
+{
+    if (strcmp(arguments_provided[1], "print_files") == 0)
+    {
+        *rv = 1;
+        return true;
+    }
+    else if (strcmp(arguments_provided[1], "print_arguments") == 0)
+    {
+        *rv = 2;
+        return true;
+    }
+    else if (strcmp(arguments_provided[1], "print_compiler") == 0)
+    {
+        *rv = 3;
+        return true;
+    }
+    else if (strcmp(arguments_provided[1], "print_sets_added") == 0)
+    {
+        *rv = 4;
+        return true;
+    }
+    return false;
 }
