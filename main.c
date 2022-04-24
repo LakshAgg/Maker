@@ -203,13 +203,19 @@ int main(int argc, char *argv[])
         {
             if (strcmp(argv[1], "set_config") == 0)
             {
-
+                {
+                    string *temp = arr_to_str(argv[2]);
+                    if (temp == NULL) throw(1, "");
+                    assign_str_trim(temp);
+                    if (str_len(temp) <= 0) throw(2, "Invalid config name");
+                    argv[2] = str_value(temp);
+                }
                 string *file_name = concat_arr_arr("./.make_config/.config_", argv[2]);
                 if (file_name == NULL)
                 {
                     throw(1, "");
                 }
-                if (str_len(file_name) <= 24)
+                if (str_len(file_name) <= 23)
                 {
                     throw(2, "Invalid configuration name.");
                 }
@@ -241,6 +247,14 @@ int main(int argc, char *argv[])
             }
             else if (strcmp(argv[1], "delete_set") == 0)
             {
+                {
+                    string *temp_name = arr_to_str(arguments_provided[2]);
+                    if (temp_name == NULL) throw(1, "");
+                    assert_e(assign_str_trim(temp_name));
+                    if (str_len(temp_name) <= 0)
+                        throw(2, "Invalid set name");
+                    arguments_provided[2] = str_value(temp_name);
+                }
                 struct passwd *w = getpwuid(getuid());
                 if (w == NULL) throw(4, "");
                 char *home_dir = w->pw_dir;
@@ -361,18 +375,18 @@ int main(int argc, char *argv[])
             else
             {
                 char type = -1;
+                string *file_name;
+                char operation = get_operation(&type, &file_name);
                 u_long length = -1, id = -1;
                 {
                     string *temp_string = arr_to_str(arguments_provided[2]);
-                    assign_str_trim(temp_string);
+                    assert_e(assign_str_trim(temp_string));
                     length = str_len(temp_string);
-                    destroy_string(temp_string);
+                    arguments_provided[2] = str_value(temp_string);
                 }
                 if (length <= 0)
-                    throw(2, "Invalid operation");
+                    throw(2, type == 1 ? "Invalid File" : (type == 2 ? "Invalid Argument" : (type == 4 ? "Invalid Set" : "Invalid compiler")));
 
-                string *file_name;
-                char operation = get_operation(&type, &file_name);
                 FILE *f = fopen(str_value(file_name), operation == 1 ? "a" : "r");
                 if (f == NULL)
                     throw(1, "");
@@ -470,11 +484,13 @@ int main(int argc, char *argv[])
                 assert_e(assign_str_trim(set_name));
                 if (str_len(set_name) <= 0)
                     throw(2, "Invalid set name");
+                arguments_provided[2] = str_value(set_name);
                 
                 string *to_add = arr_to_str(arguments_provided[3]);
                 assert_e(assign_str_trim(to_add));
                 if (str_len(to_add) <= 0)
                     throw(2, "Invalid file name");
+                arguments_provided[3] = str_value(to_add);
                     
                 struct passwd *w = getpwuid(getuid());
                 if (w == NULL) throw(4, "");
@@ -659,24 +675,29 @@ int main(int argc, char *argv[])
                 string *command = arr_to_str(arguments_provided[3]);
                 if (command == NULL)
                     throw(1, "");
-                assign_str_trim(command);
-
-                if (str_len(command) <= 0) throw(2, "Invalid command");
-
-                unsigned long count;
-                string **words = str_split(command, ' ', &count);
-                if (words == NULL || words <= 0)
-                    throw(1, "");
-
+                {
+                    string *temp = arr_to_str(argv[2]);
+                    if (temp == NULL) throw(1, "");
+                    assert_e(assign_str_trim(temp));
+                    if (str_len(temp) <= 0) throw(2, "Invalid config name.");
+                    argv[2] = str_value(temp);
+                    assert_e(assign_str_trim(command));
+                    if (str_len(command) <= 0) throw(2, "Invalid command.");
+                }
                 string *file_name = concat_arr_arr("./.make_config/.config_", argv[2]);
                 if (file_name == NULL)
                 {
                     throw(1, "");
                 }
-                if (str_len(file_name) <= 24)
+                if (str_len(file_name) <= 23)
                 {
                     throw(2, "Invalid configuration name.");
                 }
+
+                unsigned long count;
+                string **words = str_split(command, ' ', &count);
+                if (words == NULL || count <= 0)
+                    throw(1, "");
 
                 FILE *f = fopen("./.make_config/.make_config", "w");
                 if (f == NULL)
@@ -881,7 +902,7 @@ void get_files(string *s, char *set, FILE *file)
     }
     if (!found)
     {
-        fprintf(stderr, BOLDRED "Set not found\n" RESET);
+        fprintf(stderr, BOLDRED "Set %s not found\n" RESET, set);
         free(set);
         fclose(file);
         throw(3, "");
@@ -949,9 +970,15 @@ void default_usage()
     printf(BOLDWHITE "Maker (v%.1f)\n" RESET, VERSION);
     for (int i = 1; i < arguments_provided_count; i++)
     {
+        string *config_name = arr_to_str(arguments_provided[i]);
+        if (config_name == NULL || !assign_str_trim(config_name)) throw(1, "");
+        if (str_len(config_name) <= 0) throw(2, "Invalid config name");
+        arguments_provided[i] = str_value(config_name);
+
         string *config_file_name = concat_arr_arr(".make_config/.config_", arguments_provided[i]);
         if (config_file_name == NULL)
             throw(2, "Memory error");
+
         FILE *f = fopen(str_value(config_file_name), "r");
         destroy_string(config_file_name);
         if (f == NULL)

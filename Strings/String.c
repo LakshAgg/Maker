@@ -350,6 +350,7 @@ string *str_trim_start(string *a)
     rv->value = n;
     rv->length = len;
     rv->end = n + rv->length;
+    rv->value[len] = 0;
     return rv;
 }
 bool assign_str_trim_start(string *a)
@@ -395,23 +396,24 @@ string *str_trim_end(string *a)
 
     rv->value = n;
     rv->length = len + 1;
+    rv->value[len] = 0;
     rv->end = n + rv->length;
     return rv;
 }
 bool assign_str_trim_end(string *a)
 {
     if (a == NULL) return false;
-    if (a->length <= 0) return false;
+    if (a->length <= 0) return true;
     else if (a->end[-1] != ' ') return true;
 
     unsigned long len = a->length;
     len--;
-    while (a->value[len] == ' ') len--;
+    while (len >= 0 && a->value[len] == ' ') len--;
 
     char *n = malloc(len + 2);
     if (n == NULL) return NULL;
     memcpy(n, a->value, len + 1);
-
+    n[len + 1] = 0;
     __free_ptr(a->v_ctr);
     a->v_ctr = add_to_be_freed(n);
     if (!a->v_ctr) {free(n); return false;}
