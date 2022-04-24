@@ -27,6 +27,6 @@ void ___assert(char i, char *exp, char *file_name, int line, const char func[]);
 #define throw(code, message) ___throw_error(code, message)
 #define endtry ____end_try();}
 
-#define ASSERTION_ERR 3
+#define ASSERTION_ERR 100
 #define assert_e(exp) ___assert(exp, #exp, __FILE__, __LINE__, __func__)
 #endif
