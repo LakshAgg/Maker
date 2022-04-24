@@ -15,7 +15,7 @@
 #define BOLDGREEN S_ Bold Green _E
 #define RESET S_ Reset _E
 
-#define VERSION 1.3
+#define VERSION 1.4
 
 typedef struct 
 {
@@ -71,8 +71,9 @@ int main(int argc, char *argv[])
             {
                 printf(BOLDWHITE "Maker (v%.1f) (Compiled on %s %s)\n\n" RESET, VERSION, __DATE__, __TIME__);
                 printf(BOLDWHITE "Its required to set a configuration before adding any files, arguments or sets.\n" RESET);
-                printf("%s %-30s" BOLDWHITE ": Sets the configuration or creates one.\n" RESET, arguments_provided[0], "set_config [config name]");
-                printf("%s %-30s" BOLDWHITE ": Prints the current configuration.\n\n" RESET, arguments_provided[0], "print_config");
+                printf("%s %-30s" BOLDWHITE " : Sets the configuration or creates one.\n" RESET, arguments_provided[0], "set_config [config name]");
+                printf("%s %-30s" BOLDWHITE " : Creates the configuration and sets the command. Treats first word as compiler, others as arguments.\n" RESET, arguments_provided[0], "set_config [config name] [cmd]");
+                printf("%s %-30s" BOLDWHITE " : Prints the current configuration.\n\n" RESET, arguments_provided[0], "print_config");
 
                 printf(BOLDWHITE "%s %-30s : Compiles the current configuration.\n" RESET, arguments_provided[0], "");
                 printf(BOLDWHITE "%s %-30s : Compiles the configs.\n\n" RESET, arguments_provided[0], "[config] [config] ...");
@@ -629,6 +630,65 @@ int main(int argc, char *argv[])
                 fclose(f);
                 remove(str_value(f_name));
                 rename(str_value(temp_file_name), str_value(f_name));
+            }
+            else if (strcmp(argv[1], "set_config") == 0)
+            {
+                string *command = arr_to_str(arguments_provided[3]);
+                if (command == NULL)
+                    throw(1, "");
+                assign_str_trim(command);
+
+                if (str_len(command) <= 0) throw(2, "Invalid command");
+
+                unsigned long count;
+                string **words = str_split(command, ' ', &count);
+                if (words == NULL || words <= 0)
+                    throw(1, "");
+
+                FILE *f = fopen("./.make_config/.make_config", "w");
+                if (f == NULL)
+                {
+                    if (mkdir(".make_config", 0777) == -1)
+                    {
+                        throw(2, "Error creating make_config directory. Make sure there is no directory or file with the name \".make_config\".");
+                    }
+                    f = fopen("./.make_config/.make_config", "w");
+                    if (f == NULL)
+                        throw(1, "");
+                }
+                string *file_name = concat_arr_arr("./.make_config/.config_", argv[2]);
+                if (file_name == NULL)
+                {
+                    fclose(f);
+                    throw(1, "");
+                }
+
+                FILE *config = fopen(str_value(file_name), "w");
+                if (config == NULL)
+                {
+                    fclose(f);
+                    throw(1, "");
+                }
+
+                char temp = 3;
+                unsigned long temp_len = str_len(words[0]);
+                fwrite(&temp, 1, 1, config);
+                fwrite(&temp_len, sizeof(unsigned long), 1, config);
+                fwrite(str_value(words[0]), 1, temp_len, config);
+                for (unsigned long i = 1; i < count; i++)
+                {
+                    temp = 2;
+                    temp_len = str_len(words[i]);
+                    fwrite(&temp, 1, 1, config);
+                    fwrite(&temp_len, sizeof(unsigned long), 1, config);
+                    fwrite(str_value(words[i]), 1, temp_len, config);
+                }
+                fclose(config);
+                u_long length = strlen(argv[2]);
+                fwrite(&length, sizeof(u_long), 1, f);
+                fwrite(argv[2], 1, length, f);
+                printf(BOLDWHITE "Successfully set the configuration to: %s\n" RESET, argv[2]);
+                fclose(f);
             }
             else default_usage();
         }

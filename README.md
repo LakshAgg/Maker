@@ -27,7 +27,9 @@ Complete set can be deleted by: `Maker remove_set [set]`.
 ## Config
 For every project you can create configurations. Example: for testing. This will let you keep commands saparated for different purposes.
 
-A config can be set or created by: `Maker set_config [config name]`. Last set config can be printed by `Maker print_config`;
+A config can be set or created by: `Maker set_config [config name]`. You can set a complete command by `Maker set_config [config_name] "[command]"`, this will treat the first word as the compiler / program to run, and other words as arguments.
+
+Last set config can be printed by `Maker print_config`;
 
 For every config you need to specify compiler by: `Maker set_compiler [compiler]`. You can print the set compiler by `Maker print_compiler`.
 
