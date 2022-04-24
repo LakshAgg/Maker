@@ -99,7 +99,7 @@ int main(int argc, char *argv[])
                 printf("%s %-30s" BOLDWHITE " : Adds the file to the existing set or creates one.\n" RESET, arguments_provided[0], "add_file [set] [file]");
                 printf("%s %-30s" BOLDWHITE " : Prints the files added to a set.\n" RESET, arguments_provided[0], "print_files [set]");
                 printf("%s %-30s" BOLDWHITE " : Removes the file with given index from the given set.\n" RESET, arguments_provided[0], "remove_file [set] [file id]");
-                printf("%s %-30s" BOLDWHITE " : Deletes the set.\n\n" RESET, arguments_provided[0], "remove_set [set]");
+                printf("%s %-30s" BOLDWHITE " : Deletes the set.\n\n" RESET, arguments_provided[0], "delete_set [set]");
 
 
                 printf("\n");
@@ -203,6 +203,17 @@ int main(int argc, char *argv[])
         {
             if (strcmp(argv[1], "set_config") == 0)
             {
+
+                string *file_name = concat_arr_arr("./.make_config/.config_", argv[2]);
+                if (file_name == NULL)
+                {
+                    throw(1, "");
+                }
+                if (str_len(file_name) <= 24)
+                {
+                    throw(2, "Invalid configuration name.");
+                }
+
                 FILE *f = fopen("./.make_config/.make_config", "w");
                 if (f == NULL)
                 {
@@ -213,12 +224,6 @@ int main(int argc, char *argv[])
                     f = fopen("./.make_config/.make_config", "w");
                     if (f == NULL)
                         throw(1, "");
-                }
-                string *file_name = concat_arr_arr("./.make_config/.config_", argv[2]);
-                if (file_name == NULL)
-                {
-                    fclose(f);
-                    throw(1, "");
                 }
 
                 FILE *config = fopen(str_value(file_name), "a");
@@ -234,7 +239,7 @@ int main(int argc, char *argv[])
                 printf(BOLDWHITE "Successfully set the configuration to: %s\n" RESET, argv[2]);
                 fclose(f);
             }
-            else if (strcmp(argv[1], "remove_set") == 0)
+            else if (strcmp(argv[1], "delete_set") == 0)
             {
                 struct passwd *w = getpwuid(getuid());
                 if (w == NULL) throw(4, "");
@@ -356,16 +361,24 @@ int main(int argc, char *argv[])
             else
             {
                 char type = -1;
+                u_long length = -1, id = -1;
+                {
+                    string *temp_string = arr_to_str(arguments_provided[2]);
+                    assign_str_trim(temp_string);
+                    length = str_len(temp_string);
+                    destroy_string(temp_string);
+                }
+                if (length <= 0)
+                    throw(2, "Invalid operation");
+
                 string *file_name;
                 char operation = get_operation(&type, &file_name);
                 FILE *f = fopen(str_value(file_name), operation == 1 ? "a" : "r");
                 if (f == NULL)
                     throw(1, "");
                 
-                u_long length = -1, id = -1;
                 if (operation == 1)
                 {
-                    length = strlen(arguments_provided[2]);
                     fwrite(&type, 1, 1, f);
                     fwrite(&length, sizeof(u_long), 1, f);
                     fwrite(arguments_provided[2], 1, length, f);
@@ -453,6 +466,16 @@ int main(int argc, char *argv[])
         {
             if (strcmp(argv[1], "add_file") == 0)
             {
+                string *set_name = arr_to_str(argv[2]);
+                assert_e(assign_str_trim(set_name));
+                if (str_len(set_name) <= 0)
+                    throw(2, "Invalid set name");
+                
+                string *to_add = arr_to_str(arguments_provided[3]);
+                assert_e(assign_str_trim(to_add));
+                if (str_len(to_add) <= 0)
+                    throw(2, "Invalid file name");
+                    
                 struct passwd *w = getpwuid(getuid());
                 if (w == NULL) throw(4, "");
                 char *home_dir = w->pw_dir;
@@ -465,7 +488,7 @@ int main(int argc, char *argv[])
                 path[temp] = '/';
                 path[temp + 1] = 0;
 
-                string *to_add = concat_arr_arr(&(path[0]), arguments_provided[3]);
+                assert_e(assign_insert_arr(to_add, 0, &(path[0])));
                 
                 FILE *existing = fopen(str_value(home), "r");
                 if (existing == NULL)
@@ -474,7 +497,7 @@ int main(int argc, char *argv[])
                     if (existing == NULL) throw(4, "");
                     unsigned int f_count = 1;
                     fwrite(&f_count, sizeof(unsigned int), 1, existing);
-                    temp = strlen(argv[2]);
+                    temp = str_len(set_name);
                     fwrite(&temp, sizeof(unsigned long), 1, existing);
                     fwrite(arguments_provided[2], 1, temp, existing);
                     temp = str_len(to_add);
@@ -645,6 +668,16 @@ int main(int argc, char *argv[])
                 if (words == NULL || words <= 0)
                     throw(1, "");
 
+                string *file_name = concat_arr_arr("./.make_config/.config_", argv[2]);
+                if (file_name == NULL)
+                {
+                    throw(1, "");
+                }
+                if (str_len(file_name) <= 24)
+                {
+                    throw(2, "Invalid configuration name.");
+                }
+
                 FILE *f = fopen("./.make_config/.make_config", "w");
                 if (f == NULL)
                 {
@@ -655,12 +688,6 @@ int main(int argc, char *argv[])
                     f = fopen("./.make_config/.make_config", "w");
                     if (f == NULL)
                         throw(1, "");
-                }
-                string *file_name = concat_arr_arr("./.make_config/.config_", argv[2]);
-                if (file_name == NULL)
-                {
-                    fclose(f);
-                    throw(1, "");
                 }
 
                 FILE *config = fopen(str_value(file_name), "w");
