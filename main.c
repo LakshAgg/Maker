@@ -1,4 +1,5 @@
 #include <limits.h>
+#include <dirent.h>
 #include "Strings/String.h"
 #include "Exception/Exception.h"
 #include "CLI/CLI.h"
@@ -15,7 +16,7 @@
 #define BOLDGREEN S_ Bold Green _E
 #define RESET S_ Reset _E
 
-#define VERSION 1.4
+#define VERSION 1.5
 
 typedef struct 
 {
@@ -39,6 +40,8 @@ char get_operation(char *rv, string **config);
 string *get_config(string **file_name);
 
 void make(FILE *f);
+
+void print_configurations();
 
 u_long to_u_long(char *s);
 
@@ -74,6 +77,7 @@ int main(int argc, char *argv[])
                 printf("%s %-30s" BOLDWHITE " : Sets the configuration or creates one.\n" RESET, arguments_provided[0], "set_config [config name]");
                 printf("%s %-30s" BOLDWHITE " : Creates the configuration and sets the command. Treats first word as compiler, others as arguments.\n" RESET, arguments_provided[0], "set_config [config name] [cmd]");
                 printf("%s %-30s" BOLDWHITE " : Prints the current configuration.\n\n" RESET, arguments_provided[0], "print_config");
+                printf("%s %-30s" BOLDWHITE " : Prints all the configurations created.\n\n" RESET, arguments_provided[0], "print_configurations");
 
                 printf(BOLDWHITE "%s %-30s : Compiles the current configuration.\n" RESET, arguments_provided[0], "");
                 printf(BOLDWHITE "%s %-30s : Compiles the configs.\n\n" RESET, arguments_provided[0], "[config] [config] ...");
@@ -196,6 +200,10 @@ int main(int argc, char *argv[])
                     printf(BOLDWHITE "No sets found\n" RESET);
                 }
                 fclose(f);
+            }
+            else if (strcmp(argv[1], "print_configurations") == 0)
+            {
+                print_configurations();
             }
             else default_usage();
         }
@@ -490,7 +498,6 @@ int main(int argc, char *argv[])
                 assert_e(assign_str_trim(to_add));
                 if (str_len(to_add) <= 0)
                     throw(2, "Invalid file name");
-                arguments_provided[3] = str_value(to_add);
                     
                 struct passwd *w = getpwuid(getuid());
                 if (w == NULL) throw(4, "");
@@ -1014,4 +1021,38 @@ bool get_type(char *rv)
         return true;
     }
     return false;
+}
+void print_configurations()
+{
+    struct dirent *d;
+    DIR *directory = opendir(".make_config");
+    if (directory == NULL)
+    {
+        throw(2, "Could not open configurations directory.");
+    }
+    bool printed = false;
+    int count = 0;
+    while ((d = readdir(directory)) != NULL)
+    {
+        string *temp = arr_to_str(d->d_name);
+        if (starts_with_arr(temp, ".config_"))
+        {
+            if (!printed)
+            {
+                printf(BOLDWHITE "%5s | %-10s\n", "Id", "Name" RESET);
+                printed = true;
+            }
+            string *new = str_remove(temp, 0, 8);
+            destroy_string(temp);
+            printf("%5d | %-10s\n", ++count, str_value(new));
+            destroy_string(new);
+        }
+        else
+            destroy_string(temp);
+    }
+    if (!printed)
+    {
+        printf(BOLDRED "No Configurations created.\n" RESET);
+    }
+    closedir(directory);
 }
