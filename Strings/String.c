@@ -764,7 +764,7 @@ string str_remove(string s, unsigned long start, unsigned long length)
         return NULL;
     __free_ptr(rv->v_ctr);
     rv->length = s->length - length;
-    rv->value = malloc(rv->length);
+    rv->value = malloc(rv->length + 1);
     if (rv->value == NULL)
     {
         __free_ptr(rv->ctr);
