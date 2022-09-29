@@ -1,163 +1,404 @@
+/**
+ * @file String.h
+ * @author Laksh Aggarwal (aggarwallaksh54@gmail.com)
+ * @brief Header file for strings library. Includes a few cool functions for string operations.
+ * @version 0.1
+ * @date 2022-03-29
+ * 
+ * 
+ */
 #ifndef STR_H
 #define STR_H
 #include <stdbool.h>
 
-// Stores a string and its other info
-typedef struct S_Str string;
+typedef struct S_Str _string;
 
-// creates an empty string and returns its pointer
-// returns null in case of errors
-string *new_string();
+/**
+ * @brief Stores a string and other info
+ */
+typedef _string *string;
 
-// converts array of characters [aka string] to string and returns its pointer
-// returns null in case of errors
-string *arr_to_str(char *arr);
+/**
+ * @brief creates an empty string. returns null in case of errors.
+ * @return string 
+ */
+string new_string();
 
-// assigns a char array [akka string] to string s
-// returns true if successful
-bool assign_str(string *s, char *v);
+/**
+ * @brief Converts arr to string. returns NULL if unsuccessful.
+ * @param arr 
+ * @return string 
+ */
+string arr_to_str(char *arr);
 
-// concats string a and b returns pointer to new string
-// returns null in case of errors;
-string *concat_str_str(string *a, string *b);
+/**
+ * @brief assigns s the value v. returns bool success.
+ * @param s 
+ * @param v 
+ * @return true 
+ * @return false 
+ */
+bool assign_str(string s, char *v);
 
-// concats string a and string b, sets a to the new string
-// returns true if successful
-bool assign_concat_str_str(string *a, string *b);
+/**
+ * @brief concatenates a abd b, returns new string
+ * @param a 
+ * @param b 
+ * @return string 
+ */
+string concat_str_str(string a, string b);
 
-// concats string a and char * b returns pointer to new string
-// returns null in case of errors;
-string *concat_str_arr(string *a, char *b);
+/**
+ * @brief adds b to a, returns true if successful.
+ * @param a 
+ * @param b 
+ * @return true 
+ * @return false 
+ */
+bool assign_concat_str_str(string a, string b);
 
-// concats string a and char array b, assigns a the new value;
-// returns true if successful
-bool assign_concat_str_arr(string *a, char *b);
+/**
+ * @brief concatenates a abd b, returns new string
+ * @param a 
+ * @param b 
+ * @return string 
+ */
+string concat_str_arr(string a, char *b);
 
-// concats char *a and b returns pointer to new string
-// returns null in case of errors;
-string *concat_arr_arr(char *a, char *b);
+/**
+ * @brief adds b to a, returns true if successful.
+ * @param a 
+ * @param b 
+ * @return true 
+ * @return false 
+ */
+bool assign_concat_str_arr(string a, char *b);
 
-// clones v and returns its pointer
-// returns null in case of errors
-string *clone_str(string *v);
+/**
+ * @brief concatenates a and b. returns new string
+ * @param a 
+ * @param b 
+ * @return string 
+ */
+string concat_arr_arr(char *a, char *b);
 
-// clones from and returns true if success
-bool clone_to(string *to, string *from);
+/**
+ * @brief returns a clone of s.
+ * @param v 
+ * @return string 
+ */
+string clone_str(string v);
 
-// check if a contains b as substring
-bool contains_str(string *a, string *b);
+/**
+ * @brief clones {from} to {to}. returns true if successful. Same as assign_str
+ * @param to 
+ * @param from 
+ * @return true 
+ * @return false 
+ */
+bool clone_to(string to, string from);
 
-// check if a contains b as substring
-bool contains_arr(string *a, char *b);
+/**
+ * @brief returns true, if b is substring of a
+ * @param a 
+ * @param b 
+ * @return true 
+ * @return false 
+ */
+bool contains_str(string a, string b);
 
-// check if a ends with b
-bool ends_with_str(string *a, string *b);
+/**
+ * @brief returns true, if b is substring of a
+ * @param a 
+ * @param b 
+ * @return true 
+ * @return false 
+ */
+bool contains_arr(string a, char *b);
 
-// check if a ends with b
-bool ends_with_arr(string *a, char *b);
+/**
+ * @brief returns true if a ends with b
+ * @param a 
+ * @param b 
+ * @return true 
+ * @return false 
+ */
+bool ends_with_str(string a, string b);
 
-// check if a starts with b
-bool starts_with_str(string *a, string *b);
+/**
+ * @brief returns true if a ends with b
+ * @param a 
+ * @param b 
+ * @return true 
+ * @return false 
+ */
+bool ends_with_arr(string a, char *b);
 
-// check if a starts with b
-bool starts_with_arr(string *a, char *b);
+/**
+ * @brief returns true if a starts with b.
+ * @param a 
+ * @param b 
+ * @return true 
+ * @return false 
+ */
+bool starts_with_str(string a, string b);
 
-// inserts b at index of a and returns pointer to new string 
-// returns null in case of errors
-string *insert_str(string *a, unsigned long index, string *b);
+/**
+ * @brief returns true if a starts with b.
+ * @param a 
+ * @param b 
+ * @return true 
+ * @return false 
+ */
+bool starts_with_arr(string a, char *b);
 
-// inserts b at index of a and assigns a the new value
-// returns true if successful
-bool assign_insert_str(string *a, unsigned long index, string *b);
+/**
+ * @brief inserts b in a at specified position and returns pointer to new string
+ * @param a 
+ * @param index 
+ * @param b 
+ * @return string 
+ */
+string insert_str(string a, unsigned long index, string b);
 
-// inserts b at index of a and returns pointer to new string 
-// returns null in case of errors
-string *insert_arr(string *a, unsigned long index, char *b);
+/**
+ * @brief inserts b into a at specified position.
+ * @param a 
+ * @param index 
+ * @param b 
+ * @return true 
+ * @return false 
+ */
+bool assign_insert_str(string a, unsigned long index, string b);
 
-// inserts b at index of a and assigns a the new value
-// returns true if successful
-bool assign_insert_arr(string *a, unsigned long index, char *b);
+/**
+ * @brief returns copy of a with b inserted at specified position
+ * @param a 
+ * @param index 
+ * @param b 
+ * @return string 
+ */
+string insert_arr(string a, unsigned long index, char *b);
 
-// trims and returns pointer to new string
-string *str_trim_start(string *a);
+/**
+ * @brief inserts b into a at specified position
+ * @param a 
+ * @param index 
+ * @param b 
+ * @return true 
+ * @return false 
+ */
+bool assign_insert_arr(string a, unsigned long index, char *b);
 
-// trims and assigns a the new string
-// returns true if successful
-bool assign_str_trim_start(string *a);
+/**
+ * @brief returns a copy of a without beginning spaces
+ * @param a 
+ * @return string 
+ */
+string str_trim_start(string a);
 
-// trims and returns pointer to new string
-string *str_trim_end(string *a);
+/**
+ * @brief removes beginning spaces from a
+ * @param a 
+ * @return true 
+ * @return false 
+ */
+bool assign_str_trim_start(string a);
 
-// trims and assigns a the new value
-// returns true if successful
-bool assign_str_trim_end(string *a);
+/**
+ * @brief returns a copy of a without trailing spaces
+ * @param a 
+ * @return string 
+ */
+string str_trim_end(string a);
 
-// trims and returns pointer to new string
-string *str_trim(string *a);
+/**
+ * @brief removes trailing spaces from a
+ * @param a 
+ * @return true 
+ * @return false 
+ */
+bool assign_str_trim_end(string a);
 
-// trims and assigns a the new value;
-// returns true if successful
-bool assign_str_trim(string *a);
+/**
+ * @brief returns a copy of a without trailing and beginning spaces.
+ * @param a 
+ * @return string 
+ */
+string str_trim(string a);
+
+/**
+ * @brief removes beginning and trailing spaces from a.
+ * @param a 
+ * @return true 
+ * @return false 
+ */
+bool assign_str_trim(string a);
 
 // splits a into an array of strings and stores its length
-string **str_split(string *a, char sep, unsigned long *length);
+string *str_split(string a, char sep, unsigned long *length);
 
-// returns uppercase version of s
-string *str_to_upper(string *s);
+/**
+ * @brief splits s and returns array of char *. stores length in length.
+ * @param s 
+ * @param sep 
+ * @param length 
+ * @return char** 
+ */
+char **str_split_arr(string s, char sep, unsigned long *length);
 
-// returns uppercase version of s
-string *str_to_lower(string *s);
+/**
+ * @brief splits s and returns the array of char *. stores length in length.
+ * @param s 
+ * @param sep 
+ * @param length 
+ * @return char** 
+ */
+char **arr_split_arr(char *s, char sep, unsigned long *length);
 
-// converts s to lower case and assigns it the new value
-// returns true if successful
-bool assign_str_to_lower(string *s);
+/**
+ * @brief returns uppercase copy of s.
+ * @param s 
+ * @return string 
+ */
+string str_to_upper(string s);
 
-// converts s to upper case and assigns it the new value
-// returns true id successful
-bool assign_str_to_upper(string *s);
+/**
+ * @brief returns lowercase copy of s.
+ * @param s 
+ * @return string 
+ */
+string str_to_lower(string s);
 
-// returns substring of s
-string *substring(string *s, unsigned long start, unsigned long length);
+/**
+ * @brief cunverts s to lower case. returns true if successful
+ * @param s 
+ * @return true 
+ * @return false 
+ */
+bool assign_str_to_lower(string s);
 
-// returns string excluding specified region
-string *str_remove(string *s, unsigned long start, unsigned long length);
+/**
+ * @brief converts s to uppercase. returns true if successful.
+ * @param s 
+ * @return true 
+ * @return false 
+ */
+bool assign_str_to_upper(string s);
 
-// returns index of first char x it finds
-// returns index of null character if not found
-unsigned long index_of_char(string *s, char x);
+/**
+ * @brief returns substring of s
+ * @param s 
+ * @param start 
+ * @param length 
+ * @return string 
+ */
+string substring(string s, unsigned long start, unsigned long length);
 
-// returns index of last char x it finds
-// returns index of null character if not found
-unsigned long last_index_of_char(string *s, char x);
+/**
+ * @brief returns s excluding the region specified
+ * @param s 
+ * @param start 
+ * @param length 
+ * @return string 
+ */
+string str_remove(string s, unsigned long start, unsigned long length);
 
-// returns index of first substring x it finds
-// returns index of null character if not found
-unsigned long index_of_str(string *s, string *x);
+/**
+ * @brief returns index of first char x it finds. returns index of null character if not found.
+ * @param s 
+ * @param x 
+ * @return unsigned long 
+ */
+unsigned long index_of_char(string s, char x);
 
-// returns index of last substring x it finds
-// returns index of null character if not found
-unsigned long last_index_of_str(string *s, string *x);
+/**
+ * @brief returns index of last char x in s.
+ * returns index of null character if not found
+ * @param s 
+ * @param x 
+ * @return unsigned long 
+ */
+unsigned long last_index_of_char(string s, char x);
 
-// returns index of last substring x it finds
-// returns index of null character if not found
-unsigned long index_of_arr(string *s, char *x);
+/**
+ * @brief Returns index of first occurrence of x in s. returns index of NULL character if not found.
+ * @param s 
+ * @param x 
+ * @return unsigned long 
+ */
+unsigned long index_of_str(string s, string x);
 
-// returns index of last substring x it finds
-// returns index of null character if not found
-unsigned long last_index_of_arr(string *s, char *x);
+/**
+ * @brief Returns index of first occurrence of x in s. returns index of NULL character if not found.
+ * @param s 
+ * @param x 
+ * @return unsigned long 
+ */
+unsigned long index_of_arr(string s, char *x);
 
-bool isPalindrome(string *s);
+/**
+ * @brief returns index of last occurrence of x in s. returns index of NULL character if not found.
+ * @param s 
+ * @param x 
+ * @return unsigned long 
+ */
+unsigned long last_index_of_str(string s, string x);
 
-// reverses the string and returns true if successful
-bool str_reverse(string *s);
+/**
+ * @brief returns index of last occurrence of x in s. returns index of NULL character if not found.
+ * @param s 
+ * @param x 
+ * @return unsigned long 
+ */
+unsigned long last_index_of_arr(string s, char *x);
 
-// returns the string which you can use
-char *str_value(string *s);
+/**
+ * @brief returns if s is a palindrome.
+ * @param s 
+ * @return true 
+ * @return false 
+ */
+bool isPalindrome(string s);
 
-// returns string's length
-unsigned long str_len(string *s);
+/**
+ * @brief Reverses the string and returns true if successful.
+ * @param s 
+ * @return true 
+ * @return false 
+ */
+bool str_reverse(string s);
 
-void destroy_string(string *s);
+/**
+ * @brief Returns the char *value of the string.
+ * @param s 
+ * @return char* 
+ */
+char *str_value(string s);
 
-bool str_equals(string *a, string *b);
+/**
+ * @brief returns the length of the string, pre calculated.
+ * @param s 
+ * @return unsigned long 
+ */
+unsigned long str_len(string s);
+
+/**
+ * @brief Frees the memory allocated for s.
+ * @param s 
+ */
+void destroy_string(string s);
+
+/**
+ * @brief returns true if a equals b
+ * @param a 
+ * @param b 
+ * @return true 
+ * @return false 
+ */
+bool str_equals(string a, string b);
+
+    #ifndef valueof
+        #define valueof(s) str_value(s)
+    #endif
 #endif

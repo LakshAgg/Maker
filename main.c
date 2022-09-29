@@ -18,26 +18,26 @@
 
 #define VERSION 1.5
 
-typedef struct 
+typedef struct
 {
-    char type; // 1 -> file 2 -> argument 3 -> compiler 4 -> set 
-    string *value;
+    char type; // 1 -> file 2 -> argument 3 -> compiler 4 -> set
+    string value;
 } property;
 
-char **arguments_provided = NULL;
+char **arguments_provided;
 int arguments_provided_count = 0;
 
 void default_usage();
 
 void bar(int len);
 
-void get_files(string *s, char *set, FILE *f);
+void get_files(string s, char *set, FILE *f);
 
 // returns 1 -> add, 2 -> remove, 3 -> replace
 // sets rv to property type
-char get_operation(char *rv, string **config);
+char get_operation(char *rv, string *config);
 
-string *get_config(string **file_name);
+string get_config(string *file_name);
 
 void make(FILE *f);
 
@@ -51,19 +51,20 @@ int main(int argc, char *argv[])
 {
     arguments_provided_count = argc;
     arguments_provided = &(argv[0]);
+
     try // error code 3 -> print nothing, 2 -> specific message, {2, 3}` -> default error message
     {
         if (argc == 1)
         {
-            string *config;
-            string *c_name = get_config(&config);
+            string config;
+            string c_name = get_config(&config);
             FILE *f = fopen(str_value(config), "r");
             destroy_string(config);
             if (f == NULL)
             {
                 throw(4, "");
             }
-            printf(BOLDWHITE "Maker (v%.1f)\nBuilding config: "BOLDGREEN"%s\n" RESET, VERSION, str_value(c_name));
+            printf(BOLDWHITE "Maker (v%.1f)\nBuilding config: " BOLDGREEN "%s\n" RESET, VERSION, str_value(c_name));
             destroy_string(c_name);
             make(f);
         }
@@ -98,26 +99,24 @@ int main(int argc, char *argv[])
                 printf("%s %-30s" BOLDWHITE " : Removes the argument with the given id from current config.\n" RESET, arguments_provided[0], "remove_argument [id]");
                 printf("%s %-30s" BOLDWHITE " : Removes the set with the given id from current config.\n\n" RESET, arguments_provided[0], "remove_set_added [id]");
 
-
                 printf("%s %-30s" BOLDWHITE " : Prints all the sets created.\n" RESET, arguments_provided[0], "print_sets");
                 printf("%s %-30s" BOLDWHITE " : Adds the file to the existing set or creates one.\n" RESET, arguments_provided[0], "add_file [set] [file]");
                 printf("%s %-30s" BOLDWHITE " : Prints the files added to a set.\n" RESET, arguments_provided[0], "print_files [set]");
                 printf("%s %-30s" BOLDWHITE " : Removes the file with given index from the given set.\n" RESET, arguments_provided[0], "remove_file [set] [file id]");
                 printf("%s %-30s" BOLDWHITE " : Deletes the set.\n\n" RESET, arguments_provided[0], "delete_set [set]");
 
-
                 printf("\n");
             }
             else if (strcmp(arguments_provided[1], "print_config") == 0)
             {
-                string *temp;
-                string *config = get_config(&temp);
+                string temp;
+                string config = get_config(&temp);
                 destroy_string(temp);
                 printf(BOLDWHITE "Last set configuration: %s\n" RESET, str_value(config));
             }
             else if (get_type(&type_required))
             {
-                string *f_name;
+                string f_name;
                 destroy_string(get_config(&f_name));
                 FILE *f = fopen(str_value(f_name), "r");
                 if (f == NULL)
@@ -127,11 +126,16 @@ int main(int argc, char *argv[])
                 while (true)
                 {
                     char type;
-                    if (!fread(&type, 1, 1, f)) break;
+                    if (!fread(&type, 1, 1, f))
+                        break;
                     u_long len = 0;
                     fread(&len, sizeof(u_long), 1, f);
                     char *temp = malloc(len + 1);
-                    if (temp == NULL) {fclose(f); throw(2, "You ran out of memory");}
+                    if (temp == NULL)
+                    {
+                        fclose(f);
+                        throw(2, "You ran out of memory");
+                    }
                     fread(temp, 1, len, f);
                     temp[len] = 0;
                     if (type == type_required)
@@ -162,9 +166,10 @@ int main(int argc, char *argv[])
             else if (strcmp(argv[1], "print_sets") == 0)
             {
                 struct passwd *w = getpwuid(getuid());
-                if (w == NULL) throw(4, "");
+                if (w == NULL)
+                    throw(4, "");
                 char *home_dir = w->pw_dir;
-                string *f_name = concat_arr_arr(home_dir, "/.make_sets_config");
+                string f_name = concat_arr_arr(home_dir, "/.make_sets_config");
                 FILE *f = fopen(str_value(f_name), "r");
                 if (f == NULL)
                 {
@@ -175,7 +180,8 @@ int main(int argc, char *argv[])
                 while (true)
                 {
                     unsigned int n_files = 0;
-                    if (!fread(&n_files, sizeof(unsigned int), 1, f)) break;
+                    if (!fread(&n_files, sizeof(unsigned int), 1, f))
+                        break;
                     unsigned long len = 0;
                     fread(&len, sizeof(unsigned long), 1, f);
                     char *temp = malloc(len + 1);
@@ -205,20 +211,23 @@ int main(int argc, char *argv[])
             {
                 print_configurations();
             }
-            else default_usage();
+            else
+                default_usage();
         }
         else if (argc == 3)
         {
             if (strcmp(argv[1], "set_config") == 0)
             {
                 {
-                    string *temp = arr_to_str(argv[2]);
-                    if (temp == NULL) throw(1, "");
+                    string temp = arr_to_str(argv[2]);
+                    if (temp == NULL)
+                        throw(1, "");
                     assign_str_trim(temp);
-                    if (str_len(temp) <= 0) throw(2, "Invalid config name");
+                    if (str_len(temp) <= 0)
+                        throw(2, "Invalid config name");
                     argv[2] = str_value(temp);
                 }
-                string *file_name = concat_arr_arr("./.make_config/.config_", argv[2]);
+                string file_name = concat_arr_arr("./.make_config/.config_", argv[2]);
                 if (file_name == NULL)
                 {
                     throw(1, "");
@@ -256,35 +265,47 @@ int main(int argc, char *argv[])
             else if (strcmp(argv[1], "delete_set") == 0)
             {
                 {
-                    string *temp_name = arr_to_str(arguments_provided[2]);
-                    if (temp_name == NULL) throw(1, "");
+                    string temp_name = arr_to_str(arguments_provided[2]);
+                    if (temp_name == NULL)
+                        throw(1, "");
                     assert_e(assign_str_trim(temp_name));
                     if (str_len(temp_name) <= 0)
                         throw(2, "Invalid set name");
                     arguments_provided[2] = str_value(temp_name);
                 }
                 struct passwd *w = getpwuid(getuid());
-                if (w == NULL) throw(4, "");
+                if (w == NULL)
+                    throw(4, "");
                 char *home_dir = w->pw_dir;
-                string *f_name = concat_arr_arr(home_dir, "/.make_sets_config");
+                string f_name = concat_arr_arr(home_dir, "/.make_sets_config");
                 FILE *f = fopen(str_value(f_name), "r");
                 if (f == NULL)
                 {
                     printf(BOLDRED "No sets created\n" RESET);
                     throw(3, "");
                 }
-                string *temp_file_name = concat_arr_arr(home_dir, "/.temp_set_make");
+                string temp_file_name = concat_arr_arr(home_dir, "/.temp_set_make");
                 FILE *temp = fopen(str_value(temp_file_name), "w");
-                if (temp == NULL) {fclose(f); throw(4, "");}
+                if (temp == NULL)
+                {
+                    fclose(f);
+                    throw(4, "");
+                }
                 bool removed = false;
                 while (true)
                 {
                     unsigned int i = 0;
-                    if (!fread(&i, sizeof(unsigned int), 1, f)) break;
+                    if (!fread(&i, sizeof(unsigned int), 1, f))
+                        break;
                     unsigned long length = 0;
                     fread(&length, sizeof(unsigned long), 1, f);
                     char *temp_name = malloc(length + 1);
-                    if (temp_name == NULL) {fclose(f); fclose(temp); throw(4, "");}
+                    if (temp_name == NULL)
+                    {
+                        fclose(f);
+                        fclose(temp);
+                        throw(4, "");
+                    }
                     fread(temp_name, 1, length, f);
                     temp_name[length] = 0;
                     bool remove = false;
@@ -308,7 +329,12 @@ int main(int argc, char *argv[])
                         fread(&length, sizeof(unsigned long), 1, f);
                         free(temp_name);
                         temp_name = malloc(length);
-                        if (temp_name == NULL) {fclose(f); fclose(temp); throw(4, "");}
+                        if (temp_name == NULL)
+                        {
+                            fclose(f);
+                            fclose(temp);
+                            throw(4, "");
+                        }
                         fread(temp_name, 1, length, f);
                         if (!remove)
                         {
@@ -330,9 +356,10 @@ int main(int argc, char *argv[])
             else if (strcmp(argv[1], "print_files") == 0)
             {
                 struct passwd *w = getpwuid(getuid());
-                if (w == NULL) throw(4, "");
+                if (w == NULL)
+                    throw(4, "");
                 char *home_dir = w->pw_dir;
-                string *f_name = concat_arr_arr(home_dir, "/.make_sets_config");
+                string f_name = concat_arr_arr(home_dir, "/.make_sets_config");
                 FILE *f = fopen(str_value(f_name), "r");
                 if (f == NULL)
                 {
@@ -343,11 +370,16 @@ int main(int argc, char *argv[])
                 while (true)
                 {
                     unsigned int f_count = 0;
-                    if (!fread(&f_count, sizeof(unsigned int), 1, f)) break;
+                    if (!fread(&f_count, sizeof(unsigned int), 1, f))
+                        break;
                     unsigned long len = 0;
                     fread(&len, sizeof(unsigned long), 1, f);
                     char *temp = malloc(len + 1);
-                    if (temp == NULL) {fclose(f); throw(2, "You ran out of memory.");}
+                    if (temp == NULL)
+                    {
+                        fclose(f);
+                        throw(2, "You ran out of memory.");
+                    }
                     fread(temp, 1, len, f);
                     temp[len] = 0;
 
@@ -362,7 +394,11 @@ int main(int argc, char *argv[])
                         fread(&len, sizeof(unsigned long), 1, f);
                         free(temp);
                         temp = malloc(len + 1);
-                        if (temp == NULL) {fclose(f); throw(2, "You ran out of memory");};
+                        if (temp == NULL)
+                        {
+                            fclose(f);
+                            throw(2, "You ran out of memory");
+                        };
                         fread(temp, 1, len, f);
                         temp[len] = 0;
                         if (required)
@@ -383,11 +419,11 @@ int main(int argc, char *argv[])
             else
             {
                 char type = -1;
-                string *file_name;
+                string file_name;
                 char operation = get_operation(&type, &file_name);
                 u_long length = -1, id = -1;
                 {
-                    string *temp_string = arr_to_str(arguments_provided[2]);
+                    string temp_string = arr_to_str(arguments_provided[2]);
                     assert_e(assign_str_trim(temp_string));
                     length = str_len(temp_string);
                     arguments_provided[2] = str_value(temp_string);
@@ -398,7 +434,7 @@ int main(int argc, char *argv[])
                 FILE *f = fopen(str_value(file_name), operation == 1 ? "a" : "r");
                 if (f == NULL)
                     throw(1, "");
-                
+
                 if (operation == 1)
                 {
                     fwrite(&type, 1, 1, f);
@@ -423,11 +459,17 @@ int main(int argc, char *argv[])
                     while (true)
                     {
                         char c_type = 0;
-                        if (!fread(&c_type, 1, 1, f)) break;
+                        if (!fread(&c_type, 1, 1, f))
+                            break;
                         u_long len = 0;
                         fread(&len, sizeof(u_long), 1, f);
                         char *temp_name = malloc(len + 1);
-                        if (temp_name == NULL) {fclose(temp); remove("./.make_config/.temp"); throw(2,"You ran out of memory.");}
+                        if (temp_name == NULL)
+                        {
+                            fclose(temp);
+                            remove("./.make_config/.temp");
+                            throw(2, "You ran out of memory.");
+                        }
                         fread(temp_name, 1, len, f);
                         temp_name[len] = 0;
                         if (type == c_type)
@@ -488,36 +530,39 @@ int main(int argc, char *argv[])
         {
             if (strcmp(argv[1], "add_file") == 0)
             {
-                string *set_name = arr_to_str(argv[2]);
+                string set_name = arr_to_str(argv[2]);
                 assert_e(assign_str_trim(set_name));
                 if (str_len(set_name) <= 0)
                     throw(2, "Invalid set name");
                 arguments_provided[2] = str_value(set_name);
-                
-                string *to_add = arr_to_str(arguments_provided[3]);
+
+                string to_add = arr_to_str(arguments_provided[3]);
                 assert_e(assign_str_trim(to_add));
                 if (str_len(to_add) <= 0)
                     throw(2, "Invalid file name");
-                    
+
                 struct passwd *w = getpwuid(getuid());
-                if (w == NULL) throw(4, "");
+                if (w == NULL)
+                    throw(4, "");
                 char *home_dir = w->pw_dir;
 
-                string *home = concat_arr_arr(home_dir, "/.make_sets_config");
+                string home = concat_arr_arr(home_dir, "/.make_sets_config");
 
                 char path[PATH_MAX + 1];
-                if (getcwd(&(path[0]), sizeof(path)) == NULL) throw(2, "Something went wrong.");
+                if (getcwd(&(path[0]), sizeof(path)) == NULL)
+                    throw(2, "Something went wrong.");
                 u_long temp = strlen(&(path[0]));
                 path[temp] = '/';
                 path[temp + 1] = 0;
 
                 assert_e(assign_insert_arr(to_add, 0, &(path[0])));
-                
+
                 FILE *existing = fopen(str_value(home), "r");
                 if (existing == NULL)
                 {
                     existing = fopen(str_value(home), "w");
-                    if (existing == NULL) throw(4, "");
+                    if (existing == NULL)
+                        throw(4, "");
                     unsigned int f_count = 1;
                     fwrite(&f_count, sizeof(unsigned int), 1, existing);
                     temp = str_len(set_name);
@@ -530,19 +575,31 @@ int main(int argc, char *argv[])
                     fclose(existing);
                     throw(3, "");
                 }
-                string *temp_file_name = concat_arr_arr(home_dir, "/.temp_make_config");
+                string temp_file_name = concat_arr_arr(home_dir, "/.temp_make_config");
                 FILE *temp_file = fopen(str_value(temp_file_name), "w");
-                if (temp_file == NULL) {fclose(existing); throw(3, "");}
+                if (temp_file == NULL)
+                {
+                    fclose(existing);
+                    throw(3, "");
+                }
                 bool done = false;
                 while (true)
                 {
                     bool increase = false;
                     unsigned int n_files = 0;
-                    if (!fread(&n_files, sizeof(unsigned int), 1, existing)) {break;}
+                    if (!fread(&n_files, sizeof(unsigned int), 1, existing))
+                    {
+                        break;
+                    }
                     unsigned long length = 0;
                     fread(&length, sizeof(unsigned long), 1, existing);
                     char *temp_lib = malloc(length + 1);
-                    if (temp_lib == NULL) {fclose(existing); fclose(temp_file); throw(2, "You ran out of memory.");}
+                    if (temp_lib == NULL)
+                    {
+                        fclose(existing);
+                        fclose(temp_file);
+                        throw(2, "You ran out of memory.");
+                    }
                     temp_lib[length] = 0;
                     fread(temp_lib, 1, length, existing);
 
@@ -594,28 +651,39 @@ int main(int argc, char *argv[])
                 unsigned int id = to_u_long(argv[3]);
 
                 struct passwd *w = getpwuid(getuid());
-                if (w == NULL) throw(4, "");
+                if (w == NULL)
+                    throw(4, "");
                 char *home_dir = w->pw_dir;
-                string *f_name = concat_arr_arr(home_dir, "/.make_sets_config");
+                string f_name = concat_arr_arr(home_dir, "/.make_sets_config");
                 FILE *f = fopen(str_value(f_name), "r");
                 if (f == NULL)
                 {
                     fprintf(stderr, BOLDRED "No sets created\n" RESET);
                     throw(3, "");
                 }
-                
-                string *temp_file_name = concat_arr_arr(home_dir, "/.temp_set_make");
+
+                string temp_file_name = concat_arr_arr(home_dir, "/.temp_set_make");
                 FILE *temp = fopen(str_value(temp_file_name), "w");
-                if (temp == NULL) {fclose(f); throw(4, "");}
+                if (temp == NULL)
+                {
+                    fclose(f);
+                    throw(4, "");
+                }
                 bool removed = false;
                 while (true)
                 {
                     unsigned int i = 0;
-                    if (!fread(&i, sizeof(unsigned int), 1, f)) break;
+                    if (!fread(&i, sizeof(unsigned int), 1, f))
+                        break;
                     unsigned long length = 0;
                     fread(&length, sizeof(unsigned long), 1, f);
                     char *temp_name = malloc(length + 1);
-                    if (temp_name == NULL) {fclose(f); fclose(temp); throw(4, "");}
+                    if (temp_name == NULL)
+                    {
+                        fclose(f);
+                        fclose(temp);
+                        throw(4, "");
+                    }
                     fread(temp_name, 1, length, f);
                     temp_name[length] = 0;
                     bool remove = false;
@@ -636,7 +704,12 @@ int main(int argc, char *argv[])
                         free(temp_name);
                         fread(&length, sizeof(unsigned long), 1, f);
                         temp_name = malloc(length + 1);
-                        if (temp_name == NULL) {fclose(f); fclose(temp); throw(4, "");}
+                        if (temp_name == NULL)
+                        {
+                            fclose(f);
+                            fclose(temp);
+                            throw(4, "");
+                        }
                         fread(temp_name, 1, length, f);
                         temp_name[length] = 0;
                         printf(BOLDWHITE "Removed file: %s From %s\n" RESET, temp_name, argv[2]);
@@ -653,7 +726,12 @@ int main(int argc, char *argv[])
                         fread(&length, sizeof(unsigned long), 1, f);
                         free(temp_name);
                         temp_name = malloc(length + 1);
-                        if (temp_name == NULL) {fclose(f); fclose(temp); throw(4, "");}
+                        if (temp_name == NULL)
+                        {
+                            fclose(f);
+                            fclose(temp);
+                            throw(4, "");
+                        }
                         fread(temp_name, 1, length, f);
                         temp_name[length] = 0;
                         if (j != id || !remove)
@@ -661,7 +739,8 @@ int main(int argc, char *argv[])
                             fwrite(&length, sizeof(unsigned long), 1, temp);
                             fwrite(temp_name, 1, length, temp);
                         }
-                        else {
+                        else
+                        {
                             printf(BOLDWHITE "Removed file: %s From %s\n", temp_name, argv[2]);
                             removed = true;
                         }
@@ -679,19 +758,22 @@ int main(int argc, char *argv[])
             }
             else if (strcmp(argv[1], "set_config") == 0)
             {
-                string *command = arr_to_str(arguments_provided[3]);
+                string command = arr_to_str(arguments_provided[3]);
                 if (command == NULL)
                     throw(1, "");
                 {
-                    string *temp = arr_to_str(argv[2]);
-                    if (temp == NULL) throw(1, "");
+                    string temp = arr_to_str(argv[2]);
+                    if (temp == NULL)
+                        throw(1, "");
                     assert_e(assign_str_trim(temp));
-                    if (str_len(temp) <= 0) throw(2, "Invalid config name.");
+                    if (str_len(temp) <= 0)
+                        throw(2, "Invalid config name.");
                     argv[2] = str_value(temp);
                     assert_e(assign_str_trim(command));
-                    if (str_len(command) <= 0) throw(2, "Invalid command.");
+                    if (str_len(command) <= 0)
+                        throw(2, "Invalid command.");
                 }
-                string *file_name = concat_arr_arr("./.make_config/.config_", argv[2]);
+                string file_name = concat_arr_arr("./.make_config/.config_", argv[2]);
                 if (file_name == NULL)
                 {
                     throw(1, "");
@@ -702,7 +784,7 @@ int main(int argc, char *argv[])
                 }
 
                 unsigned long count;
-                string **words = str_split(command, ' ', &count);
+                string *words = str_split(command, ' ', &count);
                 if (words == NULL || count <= 0)
                     throw(1, "");
 
@@ -745,22 +827,24 @@ int main(int argc, char *argv[])
                 printf(BOLDWHITE "Successfully set the configuration to: %s\n" RESET, argv[2]);
                 fclose(f);
             }
-            else default_usage();
+            else
+                default_usage();
         }
         else
         {
             default_usage();
         }
     }
-    catch(2)
+    catch (2)
         fprintf(stderr, BOLDWHITE "An error has occurred -> " BOLDRED "%s\n" RESET, exception_handler->message);
-    catch(3)
-    {}
+    catch (3)
+    {
+    }
     catchall
         fprintf(stderr, BOLDRED "An error has occurred. Try again later.\n" RESET);
     endtry
 }
-string *get_config(string **file_name)
+string get_config(string *file_name)
 {
     FILE *f = fopen("./.make_config/.make_config", "r");
     if (f == NULL)
@@ -780,11 +864,11 @@ string *get_config(string **file_name)
     fread(x, 1, length, f);
     fclose(f);
     x[length] = 0;
-    string *rv = arr_to_str(x);
+    string rv = arr_to_str(x);
     free(x);
     if (rv == NULL)
         throw(2, "You ran out of memory.");
-    string *temp = concat_arr_arr("./.make_config/.config_", str_value(rv));
+    string temp = concat_arr_arr("./.make_config/.config_", str_value(rv));
     f = fopen(str_value(temp), "r");
     if (f == NULL)
     {
@@ -795,7 +879,7 @@ string *get_config(string **file_name)
     fclose(f);
     return rv;
 }
-char get_operation(char *rv, string **config)
+char get_operation(char *rv, string *config)
 {
     if (strcmp(arguments_provided[1], "add_file") == 0)
     {
@@ -856,12 +940,13 @@ u_long to_u_long(char *s)
     }
     return rv;
 }
-void get_files(string *s, char *set, FILE *file)
+void get_files(string s, char *set, FILE *file)
 {
     struct passwd *w = getpwuid(getuid());
-    if (w == NULL) throw(4, "");
+    if (w == NULL)
+        throw(4, "");
     char *home_dir = w->pw_dir;
-    string *f_name = concat_arr_arr(home_dir, "/.make_sets_config");
+    string f_name = concat_arr_arr(home_dir, "/.make_sets_config");
     FILE *f = fopen(str_value(f_name), "r");
     if (f == NULL)
     {
@@ -874,12 +959,18 @@ void get_files(string *s, char *set, FILE *file)
     while (true)
     {
         unsigned int f_count = 0;
-        if (!fread(&f_count, sizeof(unsigned int), 1, f)) break;
+        if (!fread(&f_count, sizeof(unsigned int), 1, f))
+            break;
         unsigned long len = 0;
         fread(&len, sizeof(unsigned long), 1, f);
         char *temp = malloc(len + 1);
-        if (temp == NULL) {fclose(f); free(set);
-        fclose(file); throw(2, "You ran out of memory.");}
+        if (temp == NULL)
+        {
+            fclose(f);
+            free(set);
+            fclose(file);
+            throw(2, "You ran out of memory.");
+        }
         fread(temp, 1, len, f);
         temp[len] = 0;
 
@@ -894,13 +985,18 @@ void get_files(string *s, char *set, FILE *file)
             fread(&len, sizeof(unsigned long), 1, f);
             free(temp);
             temp = malloc(len + 1);
-            if (temp == NULL) {fclose(f);free(set);
-        fclose(file); throw(2, "You ran out of memory");};
+            if (temp == NULL)
+            {
+                fclose(f);
+                free(set);
+                fclose(file);
+                throw(2, "You ran out of memory");
+            };
             fread(temp, 1, len, f);
             temp[len] = 0;
             if (required)
             {
-                string *b = concat_arr_arr(temp, " ");
+                string b = concat_arr_arr(temp, " ");
                 assign_concat_str_str(s, b);
                 destroy_string(b);
             }
@@ -929,11 +1025,12 @@ void bar(int len)
 void make(FILE *f)
 {
     char *compiler = NULL;
-    string *command = arr_to_str(" ");
+    string command = arr_to_str(" ");
     while (true)
     {
         char type;
-        if (!fread(&type, 1, 1, f)) break;
+        if (!fread(&type, 1, 1, f))
+            break;
         u_long len;
         fread(&len, sizeof(u_long), 1, f);
         char *temp = malloc(len + 2);
@@ -977,12 +1074,14 @@ void default_usage()
     printf(BOLDWHITE "Maker (v%.1f)\n" RESET, VERSION);
     for (int i = 1; i < arguments_provided_count; i++)
     {
-        string *config_name = arr_to_str(arguments_provided[i]);
-        if (config_name == NULL || !assign_str_trim(config_name)) throw(1, "");
-        if (str_len(config_name) <= 0) throw(2, "Invalid config name");
+        string config_name = arr_to_str(arguments_provided[i]);
+        if (config_name == NULL || !assign_str_trim(config_name))
+            throw(1, "");
+        if (str_len(config_name) <= 0)
+            throw(2, "Invalid config name");
         arguments_provided[i] = str_value(config_name);
 
-        string *config_file_name = concat_arr_arr(".make_config/.config_", arguments_provided[i]);
+        string config_file_name = concat_arr_arr(".make_config/.config_", arguments_provided[i]);
         if (config_file_name == NULL)
             throw(2, "Memory error");
 
@@ -993,7 +1092,7 @@ void default_usage()
             printf(BOLDRED "\nConfiguration: %s does not exist. Set the config by set_config. Aborting. Try %s -h for help.\n" RESET, arguments_provided[i], arguments_provided[0]);
             throw(3, "");
         }
-        printf(BOLDWHITE "\nBuilding config: "BOLDGREEN"%s\n" RESET, arguments_provided[i]);
+        printf(BOLDWHITE "\nBuilding config: " BOLDGREEN "%s\n" RESET, arguments_provided[i]);
         make(f);
     }
     throw(3, "");
@@ -1034,7 +1133,7 @@ void print_configurations()
     int count = 0;
     while ((d = readdir(directory)) != NULL)
     {
-        string *temp = arr_to_str(d->d_name);
+        string temp = arr_to_str(d->d_name);
         if (starts_with_arr(temp, ".config_"))
         {
             if (!printed)
@@ -1042,7 +1141,7 @@ void print_configurations()
                 printf(BOLDWHITE "%5s | %-10s\n", "Id", "Name" RESET);
                 printed = true;
             }
-            string *new = str_remove(temp, 0, 8);
+            string new = str_remove(temp, 0, 8);
             destroy_string(temp);
             printf("%5d | %-10s\n", ++count, str_value(new));
             destroy_string(new);
